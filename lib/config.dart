@@ -54,14 +54,19 @@ class Config {
   static const tiktok = 'https://www.tiktok.com/@apmanueldelgadooficial';
   static const youtube = 'https://www.youtube.com/@ap.manueldelgadooficial321';
 
-  /// Colores de la app (tomados del logo de la iglesia).
-  static const colorPrincipal = Color(0xFF15108C); // azul marino del logo
-  static const colorOscuro = Color(0xFF09073F);    // azul noche (fondos)
-  static const colorAcento = Color(0xFFF5A300);    // dorado de los rayos
-  static const colorAmarillo = Color(0xFFFFCB2F);  // amarillo del sol
-  static const colorCeleste = Color(0xFF4FC3F7);   // celeste del agua
+  /// Colores de la app (tomados de los logos de la radio y la iglesia).
+  static const colorPrincipal = Color(0xFF1530A8); // azul rey del logo
+  static const colorOscuro = Color(0xFF060A33);    // azul noche (fondos)
+  static const colorAcento = Color(0xFFF5A300);    // dorado
+  static const colorAmarillo = Color(0xFFFFCB2F);  // amarillo
+  static const colorCeleste = Color(0xFF4FC3F7);   // celeste
+  static const colorRojo = Color(0xFFE5232C);      // rojo de la cinta
+  static const colorVerde = Color(0xFF22B14C);     // verde del "100.1"
 
-  /// Logo de la iglesia (en la carpeta assets).
+  /// Logo de la iglesia (pantalla "Nosotros").
   static const usarLogo = true;
   static const rutaLogo = 'assets/logo.jpg';
+
+  /// Logo de la radio (pantalla principal).
+  static const rutaLogoRadio = 'assets/logo_radio.png';
 }

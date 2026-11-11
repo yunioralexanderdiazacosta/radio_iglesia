@@ -66,7 +66,7 @@ class ImagenPrograma extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF2B22C4), Config.colorOscuro],
+                    colors: [Color(0xFF2448D8), Config.colorOscuro],
                   ),
                 ),
                 child: Stack(
@@ -220,7 +220,7 @@ class _Insignia extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: enCurso ? const Color(0xFFE53935) : null,
+        color: enCurso ? Config.colorRojo : null,
         gradient: enCurso ? null : Tema.degradadoDorado,
         borderRadius: BorderRadius.circular(20),
       ),

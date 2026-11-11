@@ -53,7 +53,9 @@ class _RadioScreenState extends State<RadioScreen>
   Widget build(BuildContext context) {
     return FondoAzul(
       giro: _anim,
-      centroRayos: const Alignment(0, -0.38),
+      // Los rayos salen desde detrás del logo de la radio.
+      centroRayos: const Alignment(0, -0.6),
+      oscurecerAbajo: true,
       child: SafeArea(
         bottom: false,
         child: Center(
@@ -72,7 +74,11 @@ class _RadioScreenState extends State<RadioScreen>
                 // de play siempre se vea sin tener que bajar la pantalla.
                 final pantalla = MediaQuery.sizeOf(context).height -
                     MediaQuery.paddingOf(context).vertical;
-                final disco = ((pantalla - 540) / 1.3).clamp(120.0, 220.0);
+                final anchoDisponible =
+                    math.min(MediaQuery.sizeOf(context).width, 460.0) - 44;
+                final altoMax = (pantalla - 520).clamp(120.0, 230.0);
+                final anchoLogo =
+                    math.min(anchoDisponible, altoMax / _HeroRadio.proporcion);
                 final espacio = pantalla < 900 ? 14.0 : 24.0;
 
                 return SingleChildScrollView(
@@ -84,44 +90,46 @@ class _RadioScreenState extends State<RadioScreen>
                         cargando: cargando,
                         apagada: apagada,
                       ),
-                      SizedBox(height: espacio * 0.6),
-                      _DiscoAnimado(
-                          anim: _anim, activo: alAire, tamano: disco),
-                      SizedBox(height: espacio * 0.6),
-                      Text(
-                        Config.nombreRadio,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                        ),
+                      SizedBox(height: espacio * 0.5),
+                      // El logo ya trae el nombre y el lema de la radio.
+                      _HeroRadio(
+                        anim: _anim,
+                        activo: alAire,
+                        ancho: anchoLogo,
                       ),
-                      const SizedBox(height: 8),
-                      ShaderMask(
-                        shaderCallback: (r) =>
-                            Tema.degradadoDorado.createShader(r),
-                        child: Text(
-                          Config.lema.toUpperCase(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            letterSpacing: 2.2,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: espacio),
+                      SizedBox(height: espacio * 0.7),
                       // El reproductor va primero: el play debe verse
                       // apenas se abre la app.
-                      _Reproductor(
-                        anim: _anim,
-                        sonando: sonando,
-                        cargando: cargando,
-                        alAire: alAire,
-                        apagada: apagada,
+                      Stack(
+                        children: [
+                          _Reproductor(
+                            anim: _anim,
+                            sonando: sonando,
+                            cargando: cargando,
+                            alAire: alAire,
+                            apagada: apagada,
+                          ),
+                          // Cinta de colores del logo en el borde superior.
+                          Positioned(
+                            top: 0,
+                            left: 48,
+                            right: 48,
+                            child: Container(
+                              height: 3,
+                              decoration: BoxDecoration(
+                                gradient: Tema.degradadoTricolor,
+                                borderRadius: BorderRadius.circular(3),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Config.colorAmarillo
+                                        .withValues(alpha: 0.6),
+                                    blurRadius: 10,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       if (apagada) ...[
                         const SizedBox(height: 12),
@@ -204,80 +212,175 @@ class _BarraSuperior extends StatelessWidget {
   }
 }
 
-/// Logo con anillo dorado giratorio y ondas como el agua del logo.
-class _DiscoAnimado extends StatelessWidget {
-  const _DiscoAnimado({
+/// Logo de la radio con brillo, ondas de sonido y un destello de luz.
+class _HeroRadio extends StatefulWidget {
+  const _HeroRadio({
     required this.anim,
     required this.activo,
-    required this.tamano,
+    required this.ancho,
   });
+
+  /// Alto / ancho del logo de la radio.
+  static const proporcion = 537 / 1100;
+
   final Animation<double> anim;
   final bool activo;
-  final double tamano;
+  final double ancho;
+
+  @override
+  State<_HeroRadio> createState() => _HeroRadioState();
+}
+
+class _HeroRadioState extends State<_HeroRadio>
+    with SingleTickerProviderStateMixin {
+  // Destello que cruza el logo: una vez al abrir y en bucle mientras suena.
+  late final _brillo = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 4200),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _brillo.forward();
+  }
+
+  @override
+  void didUpdateWidget(_HeroRadio old) {
+    super.didUpdateWidget(old);
+    if (widget.activo && !old.activo) {
+      _brillo.repeat();
+    } else if (!widget.activo && old.activo) {
+      _brillo.forward(); // termina la pasada actual y se detiene
+    }
+  }
+
+  @override
+  void dispose() {
+    _brillo.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Espacio extra alrededor del logo para las ondas.
-    final extra = tamano * 0.3;
-    return SizedBox(
-      width: tamano + extra,
-      height: tamano + extra,
-      child: AnimatedBuilder(
-        animation: anim,
-        builder: (_, __) => CustomPaint(
-          painter: _OndasPainter(
-            t: anim.value,
-            activo: activo,
-            radioBase: tamano / 2,
-          ),
-          child: Center(
-            child: LogoCircular(tamano: tamano, giro: anim.value),
-          ),
+    final alto = widget.ancho * _HeroRadio.proporcion;
+    final margen = alto * 0.12;
+
+    final logo = AnimatedBuilder(
+      animation: _brillo,
+      builder: (_, child) {
+        // La franja de luz cruza durante el primer 45 % del ciclo.
+        final c = -0.3 + _brillo.value * 3.0;
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (r) => LinearGradient(
+            begin: const Alignment(-1, -0.4),
+            end: const Alignment(1, 0.4),
+            colors: [
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: 0.65),
+              Colors.white.withValues(alpha: 0),
+            ],
+            stops: [
+              (c - 0.12).clamp(0.0, 1.0),
+              c.clamp(0.0, 1.0),
+              (c + 0.12).clamp(0.0, 1.0),
+            ],
+          ).createShader(r),
+          child: child,
+        );
+      },
+      child: Image.asset(
+        Config.rutaLogoRadio,
+        width: widget.ancho,
+        height: alto,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        semanticLabel: Config.nombreRadio,
+      ),
+    );
+
+    return RepaintBoundary(
+      child: SizedBox(
+        width: widget.ancho + margen * 2,
+        height: alto + margen * 2,
+        child: AnimatedBuilder(
+          animation: widget.anim,
+          builder: (_, child) {
+            final t = widget.anim.value;
+            // Late suave al ritmo (solo cuando suena).
+            final pulso = widget.activo
+                ? math.sin(t * 2 * math.pi * 40).abs()
+                : 0.0;
+            final flotar =
+                widget.activo ? math.sin(t * 2 * math.pi * 6) * 4 : 0.0;
+            return CustomPaint(
+              painter: _OndasPainter(t: t, activo: widget.activo),
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(0, flotar),
+                  child: Transform.scale(
+                    scale: 1 + pulso * 0.018,
+                    child: child,
+                  ),
+                ),
+              ),
+            );
+          },
+          child: logo,
         ),
       ),
     );
   }
 }
 
+/// Resplandor detrás del logo y ondas ovaladas cuando suena.
 class _OndasPainter extends CustomPainter {
-  _OndasPainter({
-    required this.t,
-    required this.activo,
-    required this.radioBase,
-  });
+  _OndasPainter({required this.t, required this.activo});
 
   final double t;
   final bool activo;
-  final double radioBase;
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
-    final extra = size.width / 2 - radioBase;
+    final base = Rect.fromCenter(
+        center: c, width: size.width * 0.78, height: size.height * 0.72);
 
-    if (!activo) {
-      // En reposo: un aro tenue fijo.
-      canvas.drawCircle(
-        c,
-        radioBase + extra * 0.45,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2
-          ..color = Colors.white.withValues(alpha: 0.12),
-      );
-      return;
-    }
+    // Resplandor dorado y azul.
+    canvas.drawOval(
+      base.inflate(size.width * 0.08),
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Config.colorAcento.withValues(alpha: activo ? 0.42 : 0.3),
+            const Color(0xFF2E5BFF).withValues(alpha: 0.18),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(base.inflate(size.width * 0.08)),
+    );
 
+    if (!activo) return;
+
+    const colores = [
+      Config.colorAmarillo,
+      Config.colorCeleste,
+      Config.colorRojo,
+    ];
     for (var i = 0; i < 3; i++) {
       final p = (t * 6 + i / 3) % 1.0;
-      final color = i.isEven ? Config.colorCeleste : Config.colorAmarillo;
-      canvas.drawCircle(
-        c,
-        radioBase + extra * p,
+      final r = Rect.fromCenter(
+        center: c,
+        width: base.width + (size.width - base.width) * p,
+        height: base.height + (size.height - base.height) * p,
+      );
+      canvas.drawOval(
+        r,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5 * (1 - p) + 0.5
-          ..color = color.withValues(alpha: 0.55 * (1 - p)),
+          ..color = colores[i].withValues(alpha: 0.6 * (1 - p)),
       );
     }
   }
@@ -578,9 +681,7 @@ class _EtiquetaEnVivo extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: alAire
-            ? const Color(0xFFE53935)
-            : Colors.white.withValues(alpha: 0.1),
+        color: alAire ? Config.colorRojo : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: alAire
@@ -590,7 +691,7 @@ class _EtiquetaEnVivo extends StatelessWidget {
         boxShadow: alAire
             ? [
                 BoxShadow(
-                  color: const Color(0xFFE53935).withValues(alpha: 0.5),
+                  color: Config.colorRojo.withValues(alpha: 0.5),
                   blurRadius: 14,
                 ),
               ]

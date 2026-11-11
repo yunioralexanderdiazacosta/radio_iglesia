@@ -18,8 +18,21 @@ class Tema {
   static const degradadoAzul = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF231BB0), Config.colorPrincipal, Config.colorOscuro],
+    colors: [Color(0xFF2448D8), Config.colorPrincipal, Config.colorOscuro],
     stops: [0.0, 0.45, 1.0],
+  );
+
+  /// Cinta amarillo-azul-rojo, como la del logo de la radio.
+  static const degradadoTricolor = LinearGradient(
+    colors: [
+      Config.colorAmarillo,
+      Config.colorAcento,
+      Color(0xFF2E5BFF),
+      Config.colorPrincipal,
+      Config.colorRojo,
+      Color(0xFFB3141C),
+    ],
+    stops: [0.0, 0.3, 0.36, 0.64, 0.7, 1.0],
   );
 
   static List<BoxShadow> sombraSuave = [
@@ -86,12 +99,16 @@ class FondoAzul extends StatelessWidget {
     this.giro,
     this.centroRayos = const Alignment(0, -0.45),
     this.borderRadius,
+    this.oscurecerAbajo = false,
   });
 
   final Widget child;
   final Animation<double>? giro;
   final Alignment centroRayos;
   final BorderRadius? borderRadius;
+
+  /// Oscurece suavemente la parte de abajo para dar profundidad.
+  final bool oscurecerAbajo;
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +145,23 @@ class FondoAzul extends StatelessWidget {
                 ),
               ),
             ),
+            if (oscurecerAbajo)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Config.colorOscuro.withValues(alpha: 0.55),
+                        Config.colorOscuro.withValues(alpha: 0.9),
+                      ],
+                      stops: const [0.35, 0.75, 1.0],
+                    ),
+                  ),
+                ),
+              ),
             child,
           ],
         ),
